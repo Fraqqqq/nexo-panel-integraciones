@@ -4,3 +4,7 @@ dist
 .env.*
 *.local
 .DS_Store
+.alert-state
+# generados en build
+public/globe.bin
+public/data/

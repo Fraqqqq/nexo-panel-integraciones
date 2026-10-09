@@ -1,77 +1,104 @@
 # NEXO · Panel de Integraciones
 
-Dashboard web que integra **tres APIs externas** y muestra el resultado sobre un **globo 3D en tiempo real**, con **alertas por Telegram**.
+**[Ver en vivo →](https://fraqqqq.github.io/nexo-panel-integraciones/)**
+
+![NEXO](public/og.png)
+
+Dashboard que integra **12 APIs** en tiempo real sobre un **globo 3D con shaders propios**, con **alertas 24/7 por Telegram** que corren en GitHub Actions (sin depender de que la pestaña esté abierta).
 
 Proyecto de la materia *Integraciones Web*.
 
-## Qué integra
+## Integraciones
 
-| Integración | Servicio | Uso |
+| API | Dónde | Uso |
 |---|---|---|
-| API REST | [Open-Meteo](https://open-meteo.com) (geocoding + forecast) | Clima actual y pronóstico de 24 h de cualquier ciudad |
-| API REST | [DolarAPI](https://dolarapi.com) | Cotizaciones del dólar en Argentina |
-| API REST | [ArgentinaDatos](https://argentinadatos.com) | Historial de 30 días para los gráficos |
-| Bot / webhook saliente | [Telegram Bot API](https://core.telegram.org/bots/api) | Alertas cuando se supera un umbral |
+| [Open-Meteo Forecast](https://open-meteo.com) | Navegador + cron | Clima actual, 24 h, 7 días, amanecer/atardecer, pulso de 8 ciudades en **una sola request** |
+| [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) | Navegador | Autocompletado de ciudades |
+| [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) | Navegador | US AQI, PM2.5, PM10, ozono, índice UV |
+| [DolarAPI](https://dolarapi.com) | Navegador + cron | Cotizaciones del dólar en Argentina |
+| [ArgentinaDatos](https://argentinadatos.com) | Build | Historial de 30 días (snapshot de ~6 KB en vez de 3,5 MB) |
+| [Frankfurter (BCE)](https://frankfurter.dev) | Navegador | Moneda local de la ciudad vs. USD, cruzada con el blue |
+| [Banco Mundial](https://datahelpdesk.worldbank.org/knowledgebase/articles/889392) | Navegador | País: capital, región, población, PBI per cápita, esperanza de vida, internet |
+| [Wikipedia REST](https://es.wikipedia.org/api/rest_v1/) | Navegador | Foto y resumen de la ciudad |
+| [Nager.Date](https://date.nager.at) | Navegador | Próximos feriados del país |
+| [USGS](https://earthquake.usgs.gov/earthquakes/feed/) | Navegador | Sismos M4.5+ de las últimas 24 h, dibujados en el globo |
+| [GitHub REST](https://docs.github.com/rest) | Navegador | Estado de las últimas ejecuciones del cron de alertas |
+| [Telegram Bot API](https://core.telegram.org/bots/api) | Cron | Envío de alertas |
 
-## Lo que lo hace especial
+## Arquitectura
 
-- **Globo 3D con shaders propios (GLSL):** 70 000 puntos generados con una esfera de Fibonacci y filtrados con una máscara de agua, para dibujar solo los continentes. Al buscar una ciudad, el planeta viaja hasta ella con un marcador y una onda expansiva.
-- **La interfaz reacciona al clima:** el color de toda la UI sigue a la temperatura, y si llueve o nieva aparece precipitación en la escena.
-- **Vidrio con luz dinámica:** tarjetas con inclinación 3D, borde que sigue al cursor y gráficos que se dibujan al entrar en pantalla.
-- **Alertas anti-spam:** cada regla se dispara una vez y se rearma cuando la condición vuelve a la normalidad.
-- **Resiliente:** si una API falla, el resto sigue funcionando; las respuestas viejas se descartan si se busca otra ciudad mientras carga.
+```
+                 ┌────────────── navegador ──────────────┐
+ Open-Meteo ───▶ │ React + Three.js (globo GLSL)         │
+ DolarAPI   ───▶ │ caché por ciudad · AbortController     │
+ BCE/BM/Wiki ──▶ │ reintentos con backoff · CSP estricta  │
+ USGS/Nager ───▶ └───────────────────────────────────────┘
+                 ┌──────── GitHub Actions ────────┐
+ Open-Meteo ───▶ │ alerts.yml  (cada 15 min)      │ ──▶ Telegram
+ DolarAPI   ───▶ │ scripts/alerts.mjs + cache     │
+                 └────────────────────────────────┘
+                 ┌──────── build diario ──────────┐
+ ArgentinaDatos ▶│ history.json (~6 KB)           │ ──▶ GitHub Pages
+ máscara PNG ──▶ │ globe.bin (bitset, ~9 KB)      │
+                 └────────────────────────────────┘
+```
 
-## Stack
+- **Alertas 24/7:** las reglas están en [`alerts.config.json`](alerts.config.json). El token del bot y el chat ID son *secrets* del repo y **nunca llegan al navegador**. Cada regla avisa una vez al dispararse y otra al volver a la normalidad; el estado persiste entre ejecuciones con `actions/cache`.
+- **Datos precalculados en el build:** el historial del dólar se recorta a 30 días y la máscara de continentes se convierte en un bitset de 1 bit por punto.
 
-React 19 · TypeScript (strict) · Vite · Three.js + React Three Fiber · Framer Motion · Lenis (scroll suave) · CSS puro.
+## Lo visual
+
+- Globo de 70 000 puntos (Fibonacci) con **día y noche reales** según la posición del sol, arcos de datos animados, etiquetas clickeables de 8 ciudades y **sismos que pulsan** según su magnitud.
+- Toda la interfaz cambia de color según la temperatura de la ciudad; lluvia o nieve aparecen en la escena.
+- Preloader que muestra las conexiones reales (con latencia), texto que se decodifica, cursor con anillo, botones magnéticos, tarjetas con inclinación 3D y luz que sigue al cursor, gráficos interactivos con mouse o teclado.
 
 ## Rendimiento
 
-- El globo (Three.js) se carga con `lazy`, así que el texto y el contenido aparecen primero.
-- El render 3D se **pausa** cuando el usuario baja y el globo ya no se ve.
-- El historial del dólar pesa ~500 KB por casa: se pide **solo al acercarse a la sección** y se **cachea 6 h**.
-- `prefers-reduced-motion` desactiva animaciones, scroll suave y movimiento del globo.
-- Resolución del canvas limitada (1.75× en desktop, 1.4× en mobile).
+- **Calidad adaptativa:** mide los FPS al arrancar y, si el equipo no llega a 50, baja resolución, puntos y efectos.
+- El render 3D se pausa fuera del hero; Three.js se carga con `lazy`.
+- Sin `backdrop-filter` ni `mix-blend-mode` sobre contenido animado; las animaciones usan solo `transform`/`opacity`.
+- Contadores animados que escriben directo en el DOM (cero re-renders de React por cuadro).
+- Contexto de la ciudad (5 APIs) en paralelo, cancelado al cambiar de ciudad y cacheado 10 min.
+- Medido: ~90 FPS en escritorio con el globo completo, sin tareas largas.
 
 ## Seguridad
 
-- **CSP estricta** en producción (`script-src 'self'`, `connect-src` solo a las 5 APIs usadas, `object-src 'none'`) y `referrer: no-referrer`.
-- **Cero `innerHTML` / `dangerouslySetInnerHTML`**: todo el contenido dinámico pasa por React; el texto enviado a Telegram se escapa.
-- **Validación de entradas**: formato del token de BotFather y del chat ID antes de construir la URL; datos de `localStorage` validados antes de usarse.
-- **El token del bot vive solo en tu navegador** (`localStorage`) y únicamente se envía a `api.telegram.org`.
-  - ⚠️ Como toda app 100 % frontend, es un modelo de confianza personal: no compartas tu navegador ni uses un token de un bot importante. Para producción multiusuario, el envío debería hacerse desde un backend o función serverless.
-- Sin dependencias de runtime innecesarias; `npm audit` en limpio.
+- CSP estricta en producción: `script-src 'self'`, `connect-src` y `img-src` limitados a los dominios usados, `object-src 'none'`.
+- Cero `innerHTML`; el texto que va a Telegram se escapa.
+- Credenciales solo como *secrets* de GitHub Actions; el script nunca loguea la URL con el token.
+- Validación de lo que se lee de `localStorage` y de la URL (`?ciudad=`).
+
+## Calidad (CI)
+
+Cada push corre **ESLint → TypeScript estricto → `npm audit` → build**, y solo si todo pasa se despliega a GitHub Pages. Un deploy diario refresca el historial del dólar.
 
 ## Correrlo
 
 ```bash
 npm install
-npm run dev        # desarrollo
-npm run build      # type-check + build de producción
-npm run preview    # servir el build
+npm run dev          # genera globe.bin + history.json y levanta Vite
+npm run build        # lint de tipos + build de producción
+npm run alerts:dry   # simula el chequeo de alertas (sin secrets no envía nada)
 ```
 
-No requiere API keys.
-
-### Activar las alertas
+### Activar las alertas en tu copia
 
 1. En Telegram, hablá con **@BotFather** → `/newbot` y copiá el token.
 2. Abrí tu bot y mandale `/start`.
-3. En la sección *Alertas* pegá el token, tocá **Detectar chat**, definí los umbrales y **Guardar reglas**.
+3. En *Settings → Secrets and variables → Actions* creá `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`.
+4. Ajustá las reglas en `alerts.config.json`.
+
+> GitHub pausa los workflows programados tras 60 días sin actividad en el repo; un commit los reactiva.
 
 ## Estructura
 
 ```
-src/
-  App.tsx                 # layout y secciones
-  components/Scene.tsx    # globo 3D, atmósfera, precipitación, estrellas (GLSL)
-  components/UI.tsx       # Counter, Glass (tilt + spotlight), Spark, Reveal
-  components/Alerts.tsx   # configuración de Telegram + motor de reglas
-  lib/api.ts              # clientes de API, validación, Telegram
-  lib/useLive.ts          # estado en vivo, refresco cada 5 min, descarte de respuestas viejas
-public/earth-water.png    # máscara de agua para el globo
+scripts/        build-globe.mjs · build-data.mjs · alerts.mjs (cron)
+src/lib/        api.ts (clientes + reintentos) · useLive.ts · usePlaceInfo.ts · status.ts · format.ts · country.ts
+src/components/ Scene.tsx (globo GLSL) · UI.tsx · Search.tsx · Preloader.tsx · Resilience.tsx
+src/sections/   Weather · Destino · Dolar · System
 ```
 
 ## Créditos
 
-Máscara de agua de [three-globe](https://github.com/vasturiano/three-globe) (MIT). Datos de Open-Meteo, DolarAPI y ArgentinaDatos.
+Máscara de agua de [three-globe](https://github.com/vasturiano/three-globe) (MIT). Banderas de [flagcdn](https://flagcdn.com).
