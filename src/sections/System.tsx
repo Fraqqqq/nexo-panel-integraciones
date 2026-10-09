@@ -174,10 +174,14 @@ export function SystemSection({ dolares }: { dolares?: Dolar[] }) {
     });
   }, []);
 
-  // Solo consulta mientras la sección está cerca de la pantalla (cuida el límite de la API de GitHub).
+  // Una consulta inicial siempre (no depende de que el navegador dispare el IntersectionObserver)…
+  useEffect(() => {
+    const t = setTimeout(load, 2500);
+    return () => clearTimeout(t);
+  }, [load]);
+  // …y refresco periódico solo mientras la sección está cerca de la pantalla (límite: 60 req/h por IP).
   useEffect(() => {
     if (!inView) return;
-    void load();
     const id = setInterval(load, 90_000);
     return () => clearInterval(id);
   }, [inView, load]);
