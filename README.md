@@ -86,7 +86,8 @@ npm run alerts:dry   # simula el chequeo de alertas (sin secrets no envía nada)
 1. En Telegram, hablá con **@BotFather** → `/newbot` y copiá el token.
 2. Abrí tu bot y mandale `/start`.
 3. En *Settings → Secrets and variables → Actions* creá `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`.
-4. Ajustá las reglas en `alerts.config.json`.
+4. En *Actions → Alertas → Run workflow* tildá **prueba**: te llega un mensaje de confirmación.
+5. Ajustá las reglas en `alerts.config.json`.
 
 > GitHub pausa los workflows programados tras 60 días sin actividad en el repo; un commit los reactiva.
 

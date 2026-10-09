@@ -52,6 +52,22 @@ const valueOf = (rule) => (rule.source === "dolar" ? dolares.find((d) => d.casa 
 const fmt = (rule, v) => (rule.source === "dolar" ? ars(v) : `${v}°C`);
 const where = (rule) => (rule.source === "temp" ? ` en ${esc(name)}` : "");
 
+// Ejecución manual con "prueba": confirma que el bot y el chat están bien configurados.
+if (process.env.NEXO_TEST === "true") {
+  if (DRY) {
+    console.error("Faltan los secrets TELEGRAM_BOT_TOKEN y/o TELEGRAM_CHAT_ID.");
+    process.exit(1);
+  }
+  const blue = dolares.find((d) => d.casa === "blue")?.venta;
+  await telegram(
+    `<b>✅ NEXO conectado</b>
+Las alertas van a llegar a este chat.
+
+Ahora: ${esc(name)} ${temp}°C · dólar blue ${blue ? ars(blue) : "—"}`,
+  );
+  summary("Mensaje de prueba enviado.");
+}
+
 const state = existsSync(STATE_FILE) ? JSON.parse(readFileSync(STATE_FILE, "utf8")) : {};
 summary(`### Chequeo ${new Date().toISOString()}${DRY ? " (modo simulación: faltan secrets)" : ""}`);
 summary("| Regla | Valor | Umbral | Estado |\n|---|---|---|---|");

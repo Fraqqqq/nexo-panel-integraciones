@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Enviar un mensaje de prueba a Telegram"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -34,6 +39,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          NEXO_TEST: ${{ inputs.prueba }}
       - if: always() && hashFiles('.alert-state/state.json') != ''
         uses: actions/cache/save@v4
         with:
