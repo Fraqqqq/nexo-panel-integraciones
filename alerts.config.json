@@ -3,7 +3,7 @@
   "checkEveryMinutes": 15,
   "city": { "name": "Buenos Aires", "latitude": -34.61, "longitude": -58.38 },
   "rules": [
-    { "id": "blue-alto", "source": "dolar", "casa": "blue", "op": ">", "value": 1500, "label": "Dólar blue (venta)" },
+    { "id": "blue-alto", "source": "dolar", "casa": "blue", "op": ">", "value": 1600, "label": "Dólar blue (venta)" },
     { "id": "calor", "source": "temp", "op": ">", "value": 32, "label": "Temperatura" },
     { "id": "helada", "source": "temp", "op": "<", "value": 2, "label": "Temperatura" }
   ]
