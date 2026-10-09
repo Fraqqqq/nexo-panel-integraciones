@@ -1,10 +1,85 @@
 {
   "repo": "Fraqqqq/nexo-panel-integraciones",
   "checkEveryMinutes": 15,
-  "city": { "name": "Buenos Aires", "latitude": -34.61, "longitude": -58.38 },
+  "city": {
+    "name": "Buenos Aires",
+    "latitude": -34.61,
+    "longitude": -58.38
+  },
   "rules": [
-    { "id": "blue-alto", "source": "dolar", "casa": "blue", "op": ">", "value": 1600, "label": "Dólar blue (venta)" },
-    { "id": "calor", "source": "temp", "op": ">", "value": 32, "label": "Temperatura" },
-    { "id": "helada", "source": "temp", "op": "<", "value": 2, "label": "Temperatura" }
-  ]
+    {
+      "id": "blue-alto",
+      "source": "dolar",
+      "casa": "blue",
+      "op": ">",
+      "value": 1600,
+      "label": "Dólar blue (venta)"
+    },
+    {
+      "id": "calor",
+      "source": "temp",
+      "op": ">",
+      "value": 32,
+      "label": "Temperatura"
+    },
+    {
+      "id": "helada",
+      "source": "temp",
+      "op": "<",
+      "value": 2,
+      "label": "Temperatura"
+    }
+  ],
+  "digest": {
+    "cities": [
+      {
+        "name": "Buenos Aires",
+        "cc": "AR",
+        "latitude": -34.61,
+        "longitude": -58.38
+      },
+      {
+        "name": "Ciudad de México",
+        "cc": "MX",
+        "latitude": 19.43,
+        "longitude": -99.13
+      },
+      {
+        "name": "Nueva York",
+        "cc": "US",
+        "latitude": 40.71,
+        "longitude": -74.01
+      },
+      {
+        "name": "Madrid",
+        "cc": "ES",
+        "latitude": 40.42,
+        "longitude": -3.7
+      },
+      {
+        "name": "Londres",
+        "cc": "GB",
+        "latitude": 51.51,
+        "longitude": -0.13
+      },
+      {
+        "name": "Dubái",
+        "cc": "AE",
+        "latitude": 25.2,
+        "longitude": 55.27
+      },
+      {
+        "name": "Tokio",
+        "cc": "JP",
+        "latitude": 35.68,
+        "longitude": 139.69
+      },
+      {
+        "name": "Sídney",
+        "cc": "AU",
+        "latitude": -33.87,
+        "longitude": 151.21
+      }
+    ]
+  }
 }

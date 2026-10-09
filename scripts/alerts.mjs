@@ -68,6 +68,40 @@ Ahora: ${esc(name)} ${temp}°C · dólar blue ${blue ? ars(blue) : "—"}`,
   summary("Mensaje de prueba enviado.");
 }
 
+// Resumen del mundo: clima de varias ciudades (una sola request), dólar y sismos del día.
+if (process.env.NEXO_DIGEST === "true" && !DRY) {
+  const cities = cfg.digest?.cities ?? [];
+  const flag = (cc) => String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0)));
+  const icon = (code) =>
+    code === 0 ? "☀️" : code <= 2 ? "⛅" : code === 3 ? "☁️" : code <= 48 ? "🌫️" : code <= 67 || (code >= 80 && code <= 82) ? "🌧️" : code <= 77 || code === 85 || code === 86 ? "❄️" : "⛈️";
+  const [rows, quakes] = await Promise.all([
+    getJSON(
+      `https://api.open-meteo.com/v1/forecast?latitude=${cities.map((c) => c.latitude).join(",")}&longitude=${cities
+        .map((c) => c.longitude)
+        .join(",")}&current=temperature_2m,weather_code&timezone=auto`,
+    ),
+    getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson").catch(() => null),
+  ]);
+  const list = Array.isArray(rows) ? rows : [rows];
+  const lines = cities.map((c, i) => {
+    const cur = list[i]?.current;
+    return cur ? `${flag(c.cc)} ${esc(c.name)}  <b>${Math.round(cur.temperature_2m)}°</b> ${icon(cur.weather_code)}` : `${flag(c.cc)} ${esc(c.name)}  —`;
+  });
+  const casa = (k) => dolares.find((d) => d.casa === k)?.venta;
+  const fx = [["Blue", "blue"], ["Oficial", "oficial"], ["MEP", "bolsa"]]
+    .filter(([, k]) => casa(k))
+    .map(([n, k]) => `${n} <b>${ars(casa(k))}</b>`)
+    .join(" · ");
+  let sismos = "";
+  if (quakes?.features?.length) {
+    const top = [...quakes.features].sort((a, b) => b.properties.mag - a.properties.mag)[0].properties;
+    sismos = `\n\n🌐 Sismos M4.5+ en 24 h: <b>${quakes.features.length}</b> (mayor M${top.mag.toFixed(1)}, ${esc(top.place)})`;
+  }
+  const fecha = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Argentina/Buenos_Aires" });
+  await telegram(`<b>🌎 Resumen NEXO</b> · ${fecha}\n\n${lines.join("\n")}\n\n💵 ${fx}${sismos}`);
+  summary("Resumen del mundo enviado.");
+}
+
 const state = existsSync(STATE_FILE) ? JSON.parse(readFileSync(STATE_FILE, "utf8")) : {};
 summary(`### Chequeo ${new Date().toISOString()}${DRY ? " (modo simulación: faltan secrets)" : ""}`);
 summary("| Regla | Valor | Umbral | Estado |\n|---|---|---|---|");

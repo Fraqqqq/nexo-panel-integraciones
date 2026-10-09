@@ -9,6 +9,10 @@ on:
         description: "Enviar un mensaje de prueba a Telegram"
         type: boolean
         default: false
+      resumen:
+        description: "Enviar el resumen del mundo (clima de 8 ciudades, dólar y sismos)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -40,6 +44,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           NEXO_TEST: ${{ inputs.prueba }}
+          NEXO_DIGEST: ${{ inputs.resumen }}
       - if: always() && hashFiles('.alert-state/state.json') != ''
         uses: actions/cache/save@v4
         with:
