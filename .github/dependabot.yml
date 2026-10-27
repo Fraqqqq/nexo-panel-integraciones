@@ -8,6 +8,10 @@ updates:
       dependencias:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      # typescript-eslint todavía exige typescript <6.1
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
