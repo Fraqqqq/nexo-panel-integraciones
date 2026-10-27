@@ -34,7 +34,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v6
         with:
           path: .alert-state
           key: alert-state-${{ github.run_id }}
@@ -46,7 +46,7 @@ jobs:
           NEXO_TEST: ${{ inputs.prueba }}
           NEXO_DIGEST: ${{ inputs.resumen }}
       - if: always() && hashFiles('.alert-state/state.json') != ''
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .alert-state
           key: alert-state-${{ github.run_id }}
