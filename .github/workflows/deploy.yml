@@ -28,7 +28,11 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      # bloquea solo lo que llega al sitio publicado
+      - run: npm audit --omit=dev --audit-level=high
+      # las de desarrollo quedan como aviso; Dependabot abre el PR con el arreglo
       - run: npm audit --audit-level=high
+        continue-on-error: true
 
   build:
     needs: quality
